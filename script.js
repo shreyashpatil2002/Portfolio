@@ -2,10 +2,12 @@
 // EMAILJS CREDENTIALS
 // Replace these three values after setting up your account at emailjs.com
 // ─────────────────────────────────────────────────────────────────────────────
-const EMAILJS_PUBLIC_KEY  = '-9xCQItNl1NN1zTfE';  
-const EMAILJS_SERVICE_ID  = 'service_dv9z7a8';  
-const EMAILJS_TEMPLATE_ID = 'template_limcjh2';  
+const EMAILJS_PUBLIC_KEY  = '-9xCQItNl1NN1zTfE';
+const EMAILJS_SERVICE_ID  = 'service_dv9z7a8';
+const EMAILJS_TEMPLATE_ID = 'template_limcjh2';
 // ─────────────────────────────────────────────────────────────────────────────
+
+gsap.registerPlugin(Observer);
 
 // ─── Three.js 3D Background ───────────────────────────────────────────────────
 const init3DBackground = () => {
@@ -431,6 +433,82 @@ const initActiveNavLinks = () => {
     sections.forEach(s => observer.observe(s));
 };
 
+// ─── Intro Animation (GSAP Observer-driven PORTFOLIO reveal) ──────────────────
+const initIntroAnimation = (onComplete) => {
+    const overlay   = document.getElementById('intro-overlay');
+    const introText = document.getElementById('intro-logo-text');
+    const navLogo   = document.querySelector('.navbar .logo');
+
+    if (!overlay || !introText || !navLogo) { onComplete(); return; }
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        overlay.remove(); onComplete(); return;
+    }
+
+    document.body.style.overflow = 'hidden';
+    gsap.set(navLogo, { opacity: 0 });
+
+    requestAnimationFrame(() => {
+        // Size the text to exactly 90 vw
+        introText.style.fontSize = '100px';
+        const ratio = (window.innerWidth * 0.9) / introText.offsetWidth;
+        introText.style.fontSize = Math.floor(100 * ratio) + 'px';
+
+        // Wait for CSS entrance animation to finish before GSAP takes over
+        setTimeout(() => {
+            introText.style.animation = 'none';
+            gsap.set(introText, { opacity: 1 });
+
+            const iR = introText.getBoundingClientRect();
+            const nR = navLogo.getBoundingClientRect();
+
+            // Build the exit timeline (paused — Observer will fire it)
+            const exitTl = gsap.timeline({
+                paused: true,
+                onComplete() {
+                    overlay.remove();
+                    gsap.to(navLogo, { opacity: 1, duration: 0.3 });
+                    document.body.style.overflow = '';
+                    onComplete();
+                }
+            });
+
+            exitTl
+                .to('.intro-hint', { opacity: 0, duration: 0.2 }, 0)
+                .to(introText, {
+                    x: (nR.left + nR.width  / 2) - (iR.left + iR.width  / 2),
+                    y: (nR.top  + nR.height / 2) - (iR.top  + iR.height / 2),
+                    scale: nR.width / iR.width,
+                    transformOrigin: 'center center',
+                    ease: 'power3.inOut',
+                    duration: 1.2
+                }, 0)
+                .to(overlay, { opacity: 0, duration: 0.4 }, 0.9);
+
+            let played = false;
+            const play = () => {
+                if (played) return;
+                played = true;
+                obs.kill();
+                clearTimeout(autoTimer);
+                exitTl.play();
+            };
+
+            // GSAP Observer — normalises wheel / touch / pointer across all devices
+            const obs = Observer.create({
+                type: 'wheel,touch,pointer',
+                preventDefault: true,
+                onDown: play,
+                tolerance: 10
+            });
+
+            overlay.addEventListener('click', play, { once: true });
+            const autoTimer = setTimeout(play, 5000);
+
+        }, 950);
+    });
+};
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof THREE !== 'undefined') {
@@ -439,14 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Three.js not loaded.');
     }
 
-    if (typeof gsap !== 'undefined') {
-        initHeroAnimations();
-    } else {
-        console.error('GSAP not loaded.');
-    }
-
+    // These don't touch the hero so start immediately
     initCursorGlow();
-    initTypingEffect();
     initNavbar();
     initMobileNav();
     initScrollReveal();
@@ -455,4 +527,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initMagneticButtons();
     initContactForm();
     initActiveNavLinks();
+
+    // Intro gates the hero animations — they play only after the logo lands
+    if (typeof gsap !== 'undefined') {
+        initIntroAnimation(() => {
+            initHeroAnimations();
+            initTypingEffect();
+        });
+    } else {
+        console.error('GSAP not loaded.');
+        document.querySelectorAll('.subtitle, .title, .hero-role, .description, .cta-buttons, .scroll-indicator')
+            .forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; });
+    }
 });
