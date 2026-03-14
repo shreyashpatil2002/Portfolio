@@ -1,25 +1,28 @@
-// Three.js 3D Background Setup
+// ─────────────────────────────────────────────────────────────────────────────
+// EMAILJS CREDENTIALS
+// Replace these three values after setting up your account at emailjs.com
+// ─────────────────────────────────────────────────────────────────────────────
+const EMAILJS_PUBLIC_KEY  = '-9xCQItNl1NN1zTfE';  
+const EMAILJS_SERVICE_ID  = 'service_dv9z7a8';  
+const EMAILJS_TEMPLATE_ID = 'template_limcjh2';  
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Three.js 3D Background ───────────────────────────────────────────────────
 const init3DBackground = () => {
     const container = document.getElementById('canvas-container');
-    
-    // Scene setup
-    const scene = new THREE.Scene();
-    
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 30;
-    
-    // Renderer setup
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
-    
-    // Group to hold objects for group rotation
+
     const group = new THREE.Group();
     scene.add(group);
-    
-    // Materials
+
     const materialPrimary = new THREE.MeshPhysicalMaterial({
         color: 0x6366f1,
         metalness: 0.2,
@@ -30,7 +33,7 @@ const init3DBackground = () => {
         transparent: true,
         opacity: 0.8
     });
-    
+
     const materialSecondary = new THREE.MeshPhysicalMaterial({
         color: 0xa5b4fc,
         metalness: 0.5,
@@ -38,7 +41,6 @@ const init3DBackground = () => {
         wireframe: true
     });
 
-    // Shapes
     const geometries = [
         new THREE.IcosahedronGeometry(4, 0),
         new THREE.TorusGeometry(3, 1, 16, 100),
@@ -48,90 +50,74 @@ const init3DBackground = () => {
 
     const objects = [];
 
-    // Create scattered objects
     for (let i = 0; i < 15; i++) {
         const geometry = geometries[Math.floor(Math.random() * geometries.length)];
         const material = Math.random() > 0.5 ? materialPrimary : materialSecondary;
-        const mesh = new THREE.Mesh(geometry, material);
-        
-        // Random position around the center, slightly to the right to balance text
-        mesh.position.x = (Math.random() - 0.2) * 50; 
+        const mesh     = new THREE.Mesh(geometry, material);
+
+        mesh.position.x = (Math.random() - 0.2) * 50;
         mesh.position.y = (Math.random() - 0.5) * 40;
         mesh.position.z = (Math.random() - 0.5) * 40 - 10;
-        
         mesh.rotation.x = Math.random() * Math.PI;
         mesh.rotation.y = Math.random() * Math.PI;
-        
+
         const scale = Math.random() * 0.5 + 0.5;
         mesh.scale.set(scale, scale, scale);
-        
+
         objects.push({
-            mesh: mesh,
-            rotSpeedX: (Math.random() - 0.5) * 0.01,
-            rotSpeedY: (Math.random() - 0.5) * 0.01,
-            floatSpeed: (Math.random() * 0.02) + 0.01,
+            mesh,
+            rotSpeedX:   (Math.random() - 0.5) * 0.01,
+            rotSpeedY:   (Math.random() - 0.5) * 0.01,
+            floatSpeed:  Math.random() * 0.02 + 0.01,
             floatOffset: Math.random() * Math.PI * 2
         });
-        
+
         group.add(mesh);
     }
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    const pointLight = new THREE.PointLight(0x6366f1, 2, 100);
-    pointLight.position.set(10, 10, 10);
-    scene.add(pointLight);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-    const pointLight2 = new THREE.PointLight(0xa5b4fc, 2, 100);
-    pointLight2.position.set(-10, -10, 10);
-    scene.add(pointLight2);
+    const pl1 = new THREE.PointLight(0x6366f1, 2, 100);
+    pl1.position.set(10, 10, 10);
+    scene.add(pl1);
 
-    // Mouse Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetX = 0;
-    let targetY = 0;
-    const windowHalfX = window.innerWidth / 2;
-    const windowHalfY = window.innerHeight / 2;
+    const pl2 = new THREE.PointLight(0xa5b4fc, 2, 100);
+    pl2.position.set(-10, -10, 10);
+    scene.add(pl2);
 
-    document.addEventListener('mousemove', (event) => {
-        mouseX = (event.clientX - windowHalfX) * 0.001;
-        mouseY = (event.clientY - windowHalfY) * 0.001;
+    let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+    const halfW = window.innerWidth / 2;
+    const halfH = window.innerHeight / 2;
+
+    document.addEventListener('mousemove', e => {
+        mouseX = (e.clientX - halfW) * 0.001;
+        mouseY = (e.clientY - halfH) * 0.001;
     });
 
-    // Animation Loop
     const clock = new THREE.Clock();
 
     const animate = () => {
         requestAnimationFrame(animate);
-        
         const time = clock.getElapsedTime();
 
-        // Smooth mouse follow for camera/group
         targetX = mouseX * 2;
         targetY = mouseY * 2;
-        
+
         group.rotation.x += 0.05 * (targetY - group.rotation.x);
         group.rotation.y += 0.05 * (targetX - group.rotation.y);
 
-        // Animate individual objects
         objects.forEach(obj => {
             obj.mesh.rotation.x += obj.rotSpeedX;
             obj.mesh.rotation.y += obj.rotSpeedY;
             obj.mesh.position.y += Math.sin(time * obj.floatSpeed + obj.floatOffset) * 0.05;
         });
 
-        // Parallax effect on scroll
         camera.position.y = -(window.scrollY * 0.01);
-
         renderer.render(scene, camera);
     };
 
     animate();
 
-    // Handle Resize
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -139,66 +125,334 @@ const init3DBackground = () => {
     });
 };
 
-// Initial Animations with GSAP
-const initAnimations = () => {
-    // Hero Text Animation
-    const tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 } });
-    
-    tl.to(".subtitle", { y: 0, opacity: 1, duration: 0.8 }, 0.5)
-      .to(".title", { y: 0, opacity: 1, duration: 1 }, 0.7)
-      .to(".description", { y: 0, opacity: 1, duration: 0.8 }, 1)
-      .to(".cta-buttons", { y: 0, opacity: 1, duration: 0.8 }, 1.2)
-      .to(".scroll-indicator", { opacity: 1, duration: 1 }, 2);
+// ─── Cursor Glow ─────────────────────────────────────────────────────────────
+const initCursorGlow = () => {
+    const glow = document.getElementById('cursor-glow');
+    if (!glow || window.matchMedia('(pointer: coarse)').matches) return;
 
-    // Navbar hide/show on scroll
-    let lastScroll = 0;
-    const navbar = document.querySelector('.navbar');
-    
-    window.addEventListener('scroll', () => {
-        const currentScroll = window.pageYOffset;
-        if (currentScroll <= 0) {
-            navbar.style.transform = "translateY(0)";
-        } else if (currentScroll > lastScroll) {
-            navbar.style.transform = "translateY(-100%)";
-        } else {
-            navbar.style.transform = "translateY(0)";
-        }
-        lastScroll = currentScroll;
+    document.addEventListener('mousemove', e => {
+        glow.style.left = e.clientX + 'px';
+        glow.style.top  = e.clientY + 'px';
     });
+};
 
-    // Intersection Observer for Scroll Animations
-    const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
+// ─── Hero Typewriter / Role Cycling ──────────────────────────────────────────
+const initTypingEffect = () => {
+    const el = document.querySelector('.hero-typing');
+    if (!el) return;
+
+    const roles = [
+        'Creative Developer',
+        'Full Stack Engineer',
+        'React Enthusiast',
+        'Problem Solver'
+    ];
+
+    let roleIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+
+    const type = () => {
+        const current = roles[roleIndex];
+
+        if (isDeleting) {
+            el.textContent = current.substring(0, charIndex - 1);
+            charIndex--;
+        } else {
+            el.textContent = current.substring(0, charIndex + 1);
+            charIndex++;
+        }
+
+        let delay = isDeleting ? 45 : 85;
+
+        if (!isDeleting && charIndex === current.length) {
+            delay = 2200;
+            isDeleting = true;
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            roleIndex  = (roleIndex + 1) % roles.length;
+            delay = 400;
+        }
+
+        setTimeout(type, delay);
     };
 
-    const observer = new IntersectionObserver((entries, observer) => {
+    // Start after hero entrance animation completes
+    setTimeout(type, 2200);
+};
+
+// ─── GSAP Hero Entrance ───────────────────────────────────────────────────────
+const initHeroAnimations = () => {
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    tl.to('.subtitle',        { y: 0, opacity: 1, duration: 0.8 }, 0.4)
+      .to('.title',           { y: 0, opacity: 1, duration: 1.0 }, 0.65)
+      .to('.hero-role',       { y: 0, opacity: 1, duration: 0.8 }, 0.9)
+      .to('.description',     { y: 0, opacity: 1, duration: 0.8 }, 1.05)
+      .to('.cta-buttons',     { y: 0, opacity: 1, duration: 0.8 }, 1.25)
+      .to('.scroll-indicator',{ opacity: 1, duration: 1.0 },       2.2);
+};
+
+// ─── Navbar Hide / Show on Scroll ────────────────────────────────────────────
+const initNavbar = () => {
+    const navbar   = document.querySelector('.navbar');
+    let lastScroll = 0;
+
+    window.addEventListener('scroll', () => {
+        const current = window.pageYOffset;
+        navbar.style.transform = (current > lastScroll && current > 100)
+            ? 'translateY(-100%)'
+            : 'translateY(0)';
+        lastScroll = Math.max(current, 0);
+    }, { passive: true });
+};
+
+// ─── Mobile Navigation ───────────────────────────────────────────────────────
+const initMobileNav = () => {
+    const hamburger = document.getElementById('hamburger');
+    const mobileNav = document.getElementById('mobile-nav');
+    if (!hamburger || !mobileNav) return;
+
+    const toggle = () => {
+        hamburger.classList.toggle('active');
+        mobileNav.classList.toggle('open');
+        document.body.style.overflow = mobileNav.classList.contains('open') ? 'hidden' : '';
+    };
+
+    hamburger.addEventListener('click', toggle);
+
+    mobileNav.querySelectorAll('a').forEach(a => {
+        a.addEventListener('click', () => {
+            hamburger.classList.remove('active');
+            mobileNav.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+    });
+};
+
+// ─── Scroll Reveal (IntersectionObserver) ────────────────────────────────────
+const initScrollReveal = () => {
+    // Stagger delays for sibling cards
+    document.querySelectorAll('.projects-grid .project-card').forEach((el, i) => {
+        el.style.setProperty('--delay', `${i * 0.15}s`);
+    });
+
+    document.querySelectorAll('.about-stats .stat-card').forEach((el, i) => {
+        el.style.setProperty('--delay', `${i * 0.12}s`);
+    });
+
+    document.querySelectorAll('.skills-grid .skill-category').forEach((el, i) => {
+        el.style.setProperty('--delay', `${i * 0.15}s`);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
-                // Optional: Stop observing once animated if we don't want it to run again
-                // observer.unobserve(entry.target); 
+                // Keep observing section-titles so the underline can animate
+                if (!entry.target.classList.contains('section-title')) {
+                    observer.unobserve(entry.target);
+                }
             }
         });
-    }, observerOptions);
+    }, { threshold: 0.12 });
 
-    const animatedElements = document.querySelectorAll('.fade-in-up');
-    animatedElements.forEach(el => observer.observe(el));
+    document.querySelectorAll('.fade-in-up, .section-title').forEach(el => observer.observe(el));
 };
 
-// Wait for DOM to load
+// ─── Animated Counters ───────────────────────────────────────────────────────
+const initCounters = () => {
+    const cards = document.querySelectorAll('.stat-card');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const h3 = entry.target.querySelector('.counter');
+            if (!h3 || h3.dataset.counted) return;
+            h3.dataset.counted = true;
+            observer.unobserve(entry.target);
+
+            const target = h3.dataset.target;
+            const numMatch = target.match(/\d+/);
+            if (!numMatch) return;
+
+            const numTarget = parseInt(numMatch[0]);
+            const suffix    = target.replace(/[0-9]/g, '');
+            const duration  = 1600;
+            const startTime = performance.now();
+
+            const step = (now) => {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased    = 1 - Math.pow(1 - progress, 3);
+                h3.textContent = Math.floor(eased * numTarget) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+                else h3.textContent = target;
+            };
+
+            requestAnimationFrame(step);
+        });
+    }, { threshold: 0.5 });
+
+    cards.forEach(c => observer.observe(c));
+};
+
+// ─── Skill Bar Animations ────────────────────────────────────────────────────
+const initSkillBars = () => {
+    const categories = document.querySelectorAll('.skill-category');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            observer.unobserve(entry.target);
+
+            entry.target.querySelectorAll('.skill-indicator').forEach((bar, i) => {
+                const width = bar.dataset.width || 0;
+                setTimeout(() => {
+                    bar.style.width = width + '%';
+                }, i * 120);
+            });
+        });
+    }, { threshold: 0.3 });
+
+    categories.forEach(c => observer.observe(c));
+};
+
+// ─── Magnetic Buttons ────────────────────────────────────────────────────────
+const initMagneticButtons = () => {
+    if (window.matchMedia('(pointer: coarse)').matches) return;
+
+    document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', e => {
+            const rect = btn.getBoundingClientRect();
+            const dx   = e.clientX - (rect.left + rect.width  / 2);
+            const dy   = e.clientY - (rect.top  + rect.height / 2);
+            btn.style.transform = `translate(${dx * 0.25}px, ${dy * 0.25}px)`;
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = '';
+        });
+    });
+};
+
+// ─── Contact Form (EmailJS) ───────────────────────────────────────────────────
+const initContactForm = () => {
+    // Skip initialisation if credentials are still placeholders
+    if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+        console.warn(
+            '[Contact Form] EmailJS not configured.\n' +
+            'Open script.js and replace EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID.'
+        );
+    } else {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+    }
+
+    const form      = document.getElementById('contact-form');
+    const status    = document.getElementById('form-status');
+    const submitBtn = form.querySelector('.submit-btn');
+    const btnText   = submitBtn.querySelector('.btn-text');
+    if (!form) return;
+
+    const setStatus = (type, message) => {
+        status.className  = 'form-status ' + type;
+        status.textContent = message;
+    };
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Simple client-side validation
+        const name    = form.from_name.value.trim();
+        const email   = form.from_email.value.trim();
+        const message = form.message.value.trim();
+
+        if (!name || !email || !message) {
+            setStatus('error', '✗ Please fill in all fields.');
+            return;
+        }
+
+        const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRx.test(email)) {
+            setStatus('error', '✗ Please enter a valid email address.');
+            return;
+        }
+
+        // Loading state
+        submitBtn.classList.add('loading');
+        btnText.textContent = 'Sending…';
+        status.className = 'form-status';
+
+        // Not configured — simulate a success so the UX is visible
+        if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+            await new Promise(r => setTimeout(r, 1200));
+            setStatus('success', '✓ (Demo) Message received! Configure EmailJS to enable real delivery.');
+            form.reset();
+            submitBtn.classList.remove('loading');
+            btnText.textContent = 'Send Message';
+            return;
+        }
+
+        try {
+            await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form);
+            setStatus('success', '✓ Message sent! I\'ll get back to you soon.');
+            form.reset();
+        } catch (err) {
+            console.error('EmailJS error:', err);
+            setStatus('error', '✗ Something went wrong. Please email me directly.');
+        } finally {
+            submitBtn.classList.remove('loading');
+            btnText.textContent = 'Send Message';
+        }
+    });
+
+    // Clear status when user starts typing again
+    form.addEventListener('input', () => {
+        if (status.classList.contains('error')) {
+            status.className = 'form-status';
+        }
+    });
+};
+
+// ─── Active Nav Link on Scroll ───────────────────────────────────────────────
+const initActiveNavLinks = () => {
+    const sections = document.querySelectorAll('section[id]');
+    const links    = document.querySelectorAll('.nav-links a[href^="#"]');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                links.forEach(l => l.classList.remove('active'));
+                const active = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+                if (active) active.classList.add('active');
+            }
+        });
+    }, { threshold: 0.5 });
+
+    sections.forEach(s => observer.observe(s));
+};
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // Only init 3D if Three.js loaded correctly
     if (typeof THREE !== 'undefined') {
         init3DBackground();
     } else {
-        console.error("Three.js not loaded.");
+        console.error('Three.js not loaded.');
     }
-    
+
     if (typeof gsap !== 'undefined') {
-        initAnimations();
+        initHeroAnimations();
     } else {
-        console.error("GSAP not loaded.");
+        console.error('GSAP not loaded.');
     }
+
+    initCursorGlow();
+    initTypingEffect();
+    initNavbar();
+    initMobileNav();
+    initScrollReveal();
+    initCounters();
+    initSkillBars();
+    initMagneticButtons();
+    initContactForm();
+    initActiveNavLinks();
 });
