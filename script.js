@@ -88,13 +88,13 @@ const init3DBackground = () => {
     scene.add(pl2);
 
     let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
-    const halfW = window.innerWidth / 2;
-    const halfH = window.innerHeight / 2;
+    let halfW = window.innerWidth / 2;
+    let halfH = window.innerHeight / 2;
 
     document.addEventListener('mousemove', e => {
         mouseX = (e.clientX - halfW) * 0.001;
         mouseY = (e.clientY - halfH) * 0.001;
-    });
+    }, { passive: true });
 
     const clock = new THREE.Clock();
 
@@ -114,13 +114,14 @@ const init3DBackground = () => {
             obj.mesh.position.y += Math.sin(time * obj.floatSpeed + obj.floatOffset) * 0.05;
         });
 
-        camera.position.y = -(window.scrollY * 0.01);
-        renderer.render(scene, camera);
+        camera.position.y = -(window.scrollY * 0.01);        renderer.render(scene, camera);
     };
 
     animate();
 
     window.addEventListener('resize', () => {
+        halfW = window.innerWidth / 2;
+        halfH = window.innerHeight / 2;
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -201,7 +202,7 @@ const initNavbar = () => {
     let lastScroll = 0;
 
     window.addEventListener('scroll', () => {
-        const current = window.pageYOffset;
+        const current = window.scrollY;
         navbar.style.transform = (current > lastScroll && current > 100)
             ? 'translateY(-100%)'
             : 'translateY(0)';
@@ -251,10 +252,7 @@ const initScrollReveal = () => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
-                // Keep observing section-titles so the underline can animate
-                if (!entry.target.classList.contains('section-title')) {
-                    observer.unobserve(entry.target);
-                }
+                observer.unobserve(entry.target);
             }
         });
     }, { threshold: 0.12 });
@@ -339,21 +337,23 @@ const initMagneticButtons = () => {
 
 // ─── Contact Form (EmailJS) ───────────────────────────────────────────────────
 const initContactForm = () => {
-    // Skip initialisation if credentials are still placeholders
+    const form = document.getElementById('contact-form');
+    if (!form) return;  // guard before any querySelector
+
     if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
         console.warn(
             '[Contact Form] EmailJS not configured.\n' +
             'Open script.js and replace EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID.'
         );
-    } else {
+    } else if (typeof emailjs !== 'undefined') {
         emailjs.init(EMAILJS_PUBLIC_KEY);
+    } else {
+        console.warn('[Contact Form] EmailJS SDK not loaded (CDN blocked?). Form will show an error on submit.');
     }
 
-    const form      = document.getElementById('contact-form');
     const status    = document.getElementById('form-status');
     const submitBtn = form.querySelector('.submit-btn');
     const btnText   = submitBtn.querySelector('.btn-text');
-    if (!form) return;
 
     const setStatus = (type, message) => {
         status.className  = 'form-status ' + type;
@@ -395,6 +395,7 @@ const initContactForm = () => {
         }
 
         try {
+            if (typeof emailjs === 'undefined') throw new Error('EmailJS SDK not available');
             await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                 name:       name,    // matches {{name}} in template
                 from_email: email,   // matches {{from_email}} in template
@@ -454,7 +455,8 @@ const initIntroAnimation = (onComplete) => {
     document.body.style.overflow = 'hidden';
     gsap.set(navLogo, { opacity: 0 });
 
-    requestAnimationFrame(() => {
+    // Wait for fonts to load before measuring, so Inter is used (not the fallback)
+    document.fonts.ready.then(() => {
         // Size the text to exactly 90 vw
         introText.style.fontSize = '100px';
         const ratio = (window.innerWidth * 0.9) / introText.offsetWidth;
