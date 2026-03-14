@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const EMAILJS_PUBLIC_KEY  = '-9xCQItNl1NN1zTfE';
 const EMAILJS_SERVICE_ID  = 'service_dv9z7a8';
-const EMAILJS_TEMPLATE_ID = 'template_limcjh2';
+const EMAILJS_TEMPLATE_ID = 'template_hqnnq1c';
 // ─────────────────────────────────────────────────────────────────────────────
 
 gsap.registerPlugin(Observer);
