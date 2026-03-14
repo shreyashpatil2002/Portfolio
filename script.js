@@ -395,7 +395,13 @@ const initContactForm = () => {
         }
 
         try {
-            await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, form);
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                name:       name,    // matches {{name}} in template
+                from_email: email,   // matches {{from_email}} in template
+                message:    message, // matches {{message}} in template
+                reply_to:   email,
+                time:       new Date().toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' }),
+            });
             setStatus('success', '✓ Message sent! I\'ll get back to you soon.');
             form.reset();
         } catch (err) {
